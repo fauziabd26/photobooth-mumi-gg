@@ -1341,6 +1341,8 @@ async function downloadAs(fmt){
 function hexToRgbArr(h){return[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];}
 
 async function printStrip(){
+  openRoomModal('client');
+  /*
   const fc=document.createElement('canvas');
   await drawStrip(fc,selLayout.stripW);
   const dataUrl=fc.toDataURL('image/png');
@@ -1357,6 +1359,7 @@ async function printStrip(){
   win.document.close();
   win.onload=()=>{ win.focus(); setTimeout(()=>win.print(),300); };
   toast('🖨️ Membuka dialog print...');
+  */
 }
 /* ══════════════════════════════════
    SHARE
