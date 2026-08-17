@@ -1633,4 +1633,9 @@ document.addEventListener('DOMContentLoaded', function(){
   if (window.clientRoomCode) {
     toast(`🔌 Terhubung otomatis ke Operator Room: ${window.clientRoomCode}`, 4000);
   }
+
+  // Detect operator mode URL parameters
+  if (params.get('mode') === 'operator' || params.has('op')) {
+    openRoomModal('operator');
+  }
 });
