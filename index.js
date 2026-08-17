@@ -1523,11 +1523,15 @@ async function sendToOperator(receiptCode) {
   }, 'image/jpeg', 0.95);
 }
 
+let receivedPhotos = []; // Store recently received photos in memory
+
 function startOperator(code) {
   goTo('s-operator');
   document.getElementById('op-room-lbl').textContent = code;
-  document.getElementById('op-gallery').innerHTML = '';
+  document.getElementById('op-search-input').value = '';
+  document.getElementById('op-preview-container').innerHTML = '<p id="op-search-status" style="color:#aaa;font-size:14px;">Masukkan kode unik warga untuk mencari foto.</p>';
   document.getElementById('op-status').style.background = '#eab308';
+  receivedPhotos = [];
   
   // Generate QR Code link so users scanning this will auto-connect to the correct room channel
   const link = window.location.origin + window.location.pathname + '?room=' + encodeURIComponent(code);
@@ -1553,14 +1557,47 @@ function startOperator(code) {
       // Try to extract receipt code from filename or title
       let rCode = 'FOTO';
       if (data.title && data.title.startsWith('FOTO_')) {
-        rCode = data.title.replace('FOTO_', '');
+        rCode = data.title.replace('FOTO_', '').toUpperCase();
       } else if (data.attachment.name && data.attachment.name.startsWith('pb_')) {
-        rCode = data.attachment.name.split('_')[1] || 'FOTO';
+        rCode = (data.attachment.name.split('_')[1] || 'FOTO').toUpperCase();
       }
-      addOperatorImage(data.attachment.url, rCode);
-      toast(`📸 Foto baru masuk! (Kode: ${rCode})`);
+      
+      // Save to in-memory list
+      receivedPhotos.push({ url: data.attachment.url, code: rCode });
+      toast(`📥 Foto baru masuk! (Kode: ${rCode})`);
     }
   };
+}
+
+function searchUserPhoto() {
+  const query = document.getElementById('op-search-input').value.trim().toUpperCase();
+  const container = document.getElementById('op-preview-container');
+  
+  if (!query) {
+    toast('Ketik kode pencarian dulu cuy!');
+    return;
+  }
+  
+  const match = receivedPhotos.find(p => p.code === query);
+  
+  if (match) {
+    container.innerHTML = `
+      <div style="text-align:center;animation:fadeIn 0.3s ease;">
+        <p style="color:#22c55e;font-weight:bold;margin-bottom:12px;font-size:16px;">✅ Kode Cocok! Klik foto di bawah untuk mencetak 🖨️</p>
+        <div style="cursor:pointer;border:3px solid var(--pk);border-radius:12px;overflow:hidden;box-shadow:0 8px 24px rgba(255, 23, 68, 0.2);display:inline-block;" onclick="printOperatorImage('${match.url}')">
+          <img src="${match.url}" crossorigin="anonymous" style="max-height:400px;display:block;object-fit:contain;">
+        </div>
+        <p style="color:#aaa;font-size:12px;margin-top:8px;">Kode Warga: <strong>${match.code}</strong></p>
+      </div>
+    `;
+    // Also auto-trigger print dialog immediately for faster flow
+    printOperatorImage(match.url);
+  } else {
+    container.innerHTML = `
+      <p id="op-search-status" style="color:#ef4444;font-weight:bold;font-size:14px;">❌ Kode [${query}] tidak ditemukan atau salah!</p>
+    `;
+    toast('❌ Kode tidak ditemukan!');
+  }
 }
 
 function exitOperatorMode() {
@@ -1569,23 +1606,6 @@ function exitOperatorMode() {
     opEventSource = null;
   }
   goTo('sw');
-}
-
-function addOperatorImage(url, receiptCode) {
-  const gal = document.getElementById('op-gallery');
-  const card = document.createElement('div');
-  card.className = 'op-card';
-  card.innerHTML = `
-    <div style="background:#222;color:var(--pk);padding:6px;text-align:center;font-weight:bold;font-size:16px;border-bottom:1px solid rgba(255,255,255,0.1)">
-      KODE: ${receiptCode}
-    </div>
-    <img src="${url}" crossorigin="anonymous">
-    <div class="op-actions">
-      <button class="op-btn-view" onclick="window.open('${url}','_blank')">🔍 Lihat</button>
-      <button class="op-btn-print" onclick="printOperatorImage('${url}')">🖨️ Print</button>
-    </div>
-  `;
-  gal.prepend(card);
 }
 
 function printOperatorImage(url) {
