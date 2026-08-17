@@ -623,13 +623,21 @@ function toast(msg,dur=2200){const t=document.getElementById('toast');t.textCont
 /* ══════════════════════════════════
    NAV
 ══════════════════════════════════ */
-function goTo(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo(0,0);}
+function goTo(id){
+  if(id==='sw') activeSessionCode='';
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
 function goBack(to){
   if(to==='sgrid'){stopCamera();goTo('sgrid');}
   else if(to==='sc'){placedStickers=[];document.querySelectorAll('.placed-sticker').forEach(s=>s.remove());goTo('sc');if(!stream)initCamera();}
   else if(to==='sw'){stopCamera();startOver();}
 }
-function startOver(){photos=[];currentSlot=0;shooting=false;sequenceRunning=false;bgOn=false;bgColor='#ffffff';bgRef=null;selFilter=FILTERS[0];mirrorOn=true;placedStickers=[];document.querySelectorAll('.placed-sticker').forEach(s=>s.remove());goTo('sw');}
+function startOver(){
+  activeSessionCode='';
+  photos=[];currentSlot=0;shooting=false;sequenceRunning=false;bgOn=false;bgColor='#ffffff';bgRef=null;selFilter=FILTERS[0];mirrorOn=true;placedStickers=[];document.querySelectorAll('.placed-sticker').forEach(s=>s.remove());goTo('sw');
+}
 
 /* ══════════════════════════════════
    GRID PICKER
@@ -646,7 +654,15 @@ function renderLayoutGrid(){
   if(!selLayout||selLayout.orient!==currentOrient){selLayout=LAYOUTS.find(l=>l.orient===currentOrient);g.querySelector('.lcard')?.classList.add('sel');}
 }
 function switchOrient(o){currentOrient=o;document.getElementById('otab-p').classList.toggle('on',o==='portrait');document.getElementById('otab-l').classList.toggle('on',o==='landscape');document.getElementById('lsec-lbl').textContent=o==='portrait'?'Layout Portrait':'Layout Landscape';selLayout=null;renderLayoutGrid();}
-function confirmGrid(){if(!selLayout){alert('Pilih layout dulu ya!');return;}photos=Array(selLayout.n).fill(null);currentSlot=0;buildCameraUI();goTo('sc');initCamera();}
+function confirmGrid(){
+  if(!selLayout){alert('Pilih layout dulu ya!');return;}
+  photos=Array(selLayout.n).fill(null);
+  currentSlot=0;
+  buildCameraUI();
+  goTo('sc');
+  initCamera();
+  activeSessionCode = 'true';
+}
 
 /* ══════════════════════════════════
    BUILD CAMERA UI
@@ -1406,10 +1422,34 @@ function copyShareLink(){navigator.clipboard.writeText(location.href).then(()=>t
 ══════════════════════════════════ */
 let roomMode = '';
 let opEventSource = null;
+let activeSessionCode = ''; // Track if user has active photos
+
+// Warn user before refresh if they have an active session
+window.addEventListener('beforeunload', (e) => {
+  if (activeSessionCode) {
+    e.preventDefault();
+    e.returnValue = 'Foto kamu belum disimpan/dikirim. Yakin ingin keluar?';
+    return e.returnValue;
+  }
+});
+
+// Helper to generate 4-character uppercase random code
+function generateReceiptCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Avoid confusing chars like O, 0, I, 1
+  let res = '';
+  for(let i=0; i<4; i++) res += chars.charAt(Math.floor(Math.random() * chars.length));
+  return res;
+}
 
 function openRoomModal(mode) {
+  if (mode === 'client') {
+    // Client does NOT input codes anymore. It generates a random unique receipt code.
+    const receiptCode = generateReceiptCode();
+    sendToOperator(receiptCode);
+    return;
+  }
   roomMode = mode;
-  document.getElementById('room-input').value = window.clientRoomCode || ''; // Default to auto-read code if exists, but still prompt
+  document.getElementById('room-input').value = '';
   document.getElementById('room-modal').classList.add('vis');
   setTimeout(()=>document.getElementById('room-input').focus(), 100);
 }
@@ -1421,12 +1461,13 @@ async function submitRoomCode() {
   
   if(roomMode === 'operator') {
     startOperator(code);
-  } else if(roomMode === 'client') {
-    sendToOperator(code);
   }
 }
 
-async function sendToOperator(code) {
+async function sendToOperator(receiptCode) {
+  // Use a fallback room code or default to "mumi81" if operator set a custom one.
+  // We'll publish to a global channel for that room.
+  const room = window.clientRoomCode || 'mumi81'; 
   toast('⏳ Menyiapkan gambar...', 3000);
   const fc = document.createElement('canvas');
   await drawStrip(fc, selLayout.stripW);
@@ -1434,14 +1475,44 @@ async function sendToOperator(code) {
   fc.toBlob(async (blob) => {
     toast('🚀 Mengirim ke operator...', 3000);
     try {
-      const topic = `mumi_pb_${code.toLowerCase()}`;
+      const topic = `mumi_pb_${room.toLowerCase()}`;
       const res = await fetch(`https://ntfy.sh/${topic}`, {
         method: 'POST',
         body: blob,
-        headers: { 'Filename': `photobooth_${Date.now()}.jpg` }
+        headers: { 
+          'Filename': `pb_${receiptCode}_${Date.now()}.jpg`,
+          'Title': `FOTO_${receiptCode}` // Send receipt code in ntfy Title header
+        }
       });
       if(res.ok) {
-        toast(`✅ Berhasil dikirim ke Operator (Room: ${code})!`, 4000);
+        // Clear active session since it's safely sent
+        activeSessionCode = '';
+        
+        // Show the receipt code in a nice alert
+        const modal = document.getElementById('room-modal');
+        modal.classList.add('vis');
+        document.getElementById('room-title').innerHTML = '🎉 Berhasil Dikirim!';
+        document.getElementById('room-desc').innerHTML = `Tunjukkan kode unik ini ke Operator untuk dicetak:<br><br><strong style="font-size:36px;color:var(--pk);letter-spacing:4px;">${receiptCode}</strong>`;
+        // Hide input and keep only close button
+        document.getElementById('room-input').style.display = 'none';
+        const okBtn = modal.querySelector('button[onclick="submitRoomCode()"]');
+        if (okBtn) okBtn.style.display = 'none';
+        const cancelBtn = modal.querySelector('button[onclick*="room-modal"]');
+        if (cancelBtn) {
+          cancelBtn.textContent = 'Selesai';
+          cancelBtn.onclick = () => {
+            modal.classList.remove('vis');
+            // reset modal for next time
+            setTimeout(() => {
+              document.getElementById('room-title').textContent = 'Masukkan Kode Room';
+              document.getElementById('room-desc').textContent = 'Kode ini digunakan untuk menyambungkan perangkatmu dengan operator.';
+              document.getElementById('room-input').style.display = 'block';
+              if (okBtn) okBtn.style.display = 'block';
+              cancelBtn.textContent = 'Batal';
+              cancelBtn.onclick = () => modal.classList.remove('vis');
+            }, 300);
+          };
+        }
       } else {
         toast('❌ Gagal mengirim, coba lagi.');
       }
@@ -1458,7 +1529,7 @@ function startOperator(code) {
   document.getElementById('op-gallery').innerHTML = '';
   document.getElementById('op-status').style.background = '#eab308';
   
-  // Generate QR Code link
+  // Generate QR Code link so users scanning this will auto-connect to the correct room channel
   const link = window.location.origin + window.location.pathname + '?room=' + encodeURIComponent(code);
   document.getElementById('op-qr-img').src = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + encodeURIComponent(link);
 
@@ -1479,8 +1550,15 @@ function startOperator(code) {
   opEventSource.onmessage = (e) => {
     const data = JSON.parse(e.data);
     if(data.event === 'message' && data.attachment) {
-      addOperatorImage(data.attachment.url);
-      toast('📸 Foto baru masuk!');
+      // Try to extract receipt code from filename or title
+      let rCode = 'FOTO';
+      if (data.title && data.title.startsWith('FOTO_')) {
+        rCode = data.title.replace('FOTO_', '');
+      } else if (data.attachment.name && data.attachment.name.startsWith('pb_')) {
+        rCode = data.attachment.name.split('_')[1] || 'FOTO';
+      }
+      addOperatorImage(data.attachment.url, rCode);
+      toast(`📸 Foto baru masuk! (Kode: ${rCode})`);
     }
   };
 }
@@ -1493,11 +1571,14 @@ function exitOperatorMode() {
   goTo('sw');
 }
 
-function addOperatorImage(url) {
+function addOperatorImage(url, receiptCode) {
   const gal = document.getElementById('op-gallery');
   const card = document.createElement('div');
   card.className = 'op-card';
   card.innerHTML = `
+    <div style="background:#222;color:var(--pk);padding:6px;text-align:center;font-weight:bold;font-size:16px;border-bottom:1px solid rgba(255,255,255,0.1)">
+      KODE: ${receiptCode}
+    </div>
     <img src="${url}" crossorigin="anonymous">
     <div class="op-actions">
       <button class="op-btn-view" onclick="window.open('${url}','_blank')">🔍 Lihat</button>
