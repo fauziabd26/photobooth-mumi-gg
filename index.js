@@ -1443,9 +1443,18 @@ function generateReceiptCode() {
 
 function openRoomModal(mode) {
   if (mode === 'client') {
-    // Client does NOT input codes anymore. It generates a random unique receipt code.
     const receiptCode = generateReceiptCode();
-    sendToOperator(receiptCode);
+    if (window.clientRoomCode) {
+      sendToOperator(window.clientRoomCode, receiptCode);
+    } else {
+      roomMode = 'client_select_room';
+      window.pendingReceiptCode = receiptCode;
+      document.getElementById('room-title').textContent = 'Koneksi ke Operator';
+      document.getElementById('room-desc').textContent = 'Masukkan Kode Room yang tampil di layar Laptop Operator.';
+      document.getElementById('room-input').value = '';
+      document.getElementById('room-modal').classList.add('vis');
+      setTimeout(()=>document.getElementById('room-input').focus(), 100);
+    }
     return;
   }
   roomMode = mode;
@@ -1461,13 +1470,13 @@ async function submitRoomCode() {
   
   if(roomMode === 'operator') {
     startOperator(code);
+  } else if(roomMode === 'client_select_room') {
+    window.clientRoomCode = code;
+    sendToOperator(code, window.pendingReceiptCode);
   }
 }
 
-async function sendToOperator(receiptCode) {
-  // Use a fallback room code or default to "mumi81" if operator set a custom one.
-  // We'll publish to a global channel for that room.
-  const room = window.clientRoomCode || 'mumi81'; 
+async function sendToOperator(room, receiptCode) {
   toast('⏳ Menyiapkan gambar...', 3000);
   const fc = document.createElement('canvas');
   await drawStrip(fc, selLayout.stripW);
