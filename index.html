@@ -81,9 +81,20 @@
 
     <!-- ── LEFT SIDEBAR: accordion panels ── -->
     <div class="theme-sidebar">
+      <!-- Mobile Editor Tabs -->
+      <div class="mobile-editor-tabs" id="mobile-editor-tabs">
+        <button class="m-tab active" onclick="switchMobileTab('acc-filter')">✨ Filter</button>
+        <button class="m-tab" onclick="switchMobileTab('acc-tema')">🎨 Tema</button>
+        <button class="m-tab" onclick="switchMobileTab('acc-frame')">🖼️ Frame</button>
+        <button class="m-tab" onclick="switchMobileTab('acc-text')">✏️ Teks</button>
+        <button class="m-tab" onclick="switchMobileTab('acc-sticker')">🎭 Stiker</button>
+      </div>
 
-      <!-- Filter Foto -->
-      <div class="acc-section open" id="acc-filter">
+      <!-- Scrollable editor content -->
+      <div class="theme-sidebar-content" style="flex:1; overflow-y:auto; overflow-x:hidden; width:100%;">
+
+        <!-- Filter Foto -->
+        <div class="acc-section open" id="acc-filter">
         <div class="acc-header" onclick="toggleAcc('acc-filter')">
           <span class="acc-title">✨ Filter Foto</span>
           <span class="acc-arrow">▾</span>
@@ -94,7 +105,7 @@
       </div>
 
       <!-- Tema Bingkai -->
-      <div class="acc-section open" id="acc-tema">
+      <div class="acc-section" id="acc-tema">
         <div class="acc-header" onclick="toggleAcc('acc-tema')">
           <span class="acc-title">🎨 Tema Bingkai</span>
           <span class="acc-arrow">▾</span>
@@ -105,7 +116,7 @@
       </div>
 
       <!-- Warna Frame -->
-      <div class="acc-section open" id="acc-frame">
+      <div class="acc-section" id="acc-frame">
         <div class="acc-header" onclick="toggleAcc('acc-frame')">
           <span class="acc-title">🖼️ Warna Frame</span>
           <span class="acc-arrow">▾</span>
@@ -116,7 +127,7 @@
       </div>
 
       <!-- Teks di Strip -->
-      <div class="acc-section open" id="acc-text">
+      <div class="acc-section" id="acc-text">
         <div class="acc-header" onclick="toggleAcc('acc-text')">
           <span class="acc-title">✏️ Teks di Strip</span>
           <span class="acc-arrow">▾</span>
@@ -137,7 +148,7 @@
       </div>
 
       <!-- Stiker -->
-      <div class="acc-section open" id="acc-sticker">
+      <div class="acc-section" id="acc-sticker">
         <div class="acc-header" onclick="toggleAcc('acc-sticker')">
           <span class="acc-title">🎭 Stiker</span>
           <span class="acc-arrow">▾</span>
@@ -148,8 +159,7 @@
         </div>
       </div>
 
-      <!-- Spacer so last section isn't stuck at bottom -->
-      <div style="flex:1;min-height:20px"></div>
+      </div>
     </div>
 
     <!-- ── RIGHT: PREVIEW PANE ── -->
@@ -203,15 +213,36 @@
       <span style="font-size:12px;color:#aaa;margin-top:8px;">Scan QR ini di HP untuk auto-connect</span>
     </div>
   </div>
-  <div style="display:flex;flex-direction:column;align-items:center;margin:20px 0;gap:12px;">
-    <div style="display:flex;gap:10px;width:100%;max-width:420px;padding:0 20px;">
-      <input type="text" id="op-search-input" placeholder="Ketik Kode (misal: B9K5)" style="flex:1;padding:12px;font-size:18px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(0,0,0,0.3);color:#fff;text-align:center;text-transform:uppercase;outline:none;font-family:inherit;" autocomplete="off">
-      <button onclick="searchUserPhoto()" style="padding:12px 20px;font-size:16px;background:var(--pk);color:#111;font-weight:bold;border-radius:8px;border:none;cursor:pointer;">Cari 🔍</button>
+  <!-- Operator Tab Nav -->
+  <div style="display:flex;justify-content:center;gap:15px;margin-bottom:15px;">
+    <button class="m-tab active" id="op-tab-print" onclick="switchOpView('print')" style="padding:10px 20px;font-size:14px;">🖨️ Cetak Foto</button>
+    <button class="m-tab" id="op-tab-frames" onclick="switchOpView('frames')" style="padding:10px 20px;font-size:14px;">🖼️ Kelola Bingkai</button>
+  </div>
+
+  <!-- VIEW 1: PRINT VIEW -->
+  <div id="op-view-print">
+    <div style="display:flex;flex-direction:column;align-items:center;margin:20px 0;gap:12px;">
+      <div style="display:flex;gap:10px;width:100%;max-width:420px;padding:0 20px;">
+        <input type="text" id="op-search-input" placeholder="Ketik Kode (misal: B9K5)" style="flex:1;padding:12px;font-size:18px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(0,0,0,0.3);color:#fff;text-align:center;text-transform:uppercase;outline:none;font-family:inherit;" autocomplete="off">
+        <button onclick="searchUserPhoto()" style="padding:12px 20px;font-size:16px;background:var(--pk);color:#111;font-weight:bold;border-radius:8px;border:none;cursor:pointer;">Cari 🔍</button>
+      </div>
+    </div>
+    <div id="op-preview-container" style="display:flex;flex-direction:column;align-items:center;gap:16px;padding:20px;min-height:200px;">
+      <!-- Search result will appear here -->
+      <p id="op-search-status" style="color:#aaa;font-size:14px;">Masukkan kode unik warga untuk mencari foto.</p>
     </div>
   </div>
-  <div id="op-preview-container" style="display:flex;flex-direction:column;align-items:center;gap:16px;padding:20px;min-height:200px;">
-    <!-- Search result will appear here -->
-    <p id="op-search-status" style="color:#aaa;font-size:14px;">Masukkan kode unik warga untuk mencari foto.</p>
+
+  <!-- VIEW 2: FRAME MANAGEMENT VIEW -->
+  <div id="op-view-frames" style="display:none;padding:20px;max-width:800px;margin:0 auto;text-align:center;">
+    <div style="margin-bottom:20px;">
+      <input type="file" id="op-frame-upload" accept="image/png" style="display:none;" onchange="handleFrameUpload(event)">
+      <button class="btn-shoot" style="background:#22c55e;color:#111;max-width:280px;font-weight:bold;" onclick="document.getElementById('op-frame-upload').click()">📂 Upload Bingkai PNG Transparan</button>
+      <p style="font-size:12px;color:#aaa;margin-top:6px;">Upload file PNG transparan (Rekomendasi rasio strip: 1:2 atau 1:3)</p>
+    </div>
+    <div id="op-frames-grid" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(130px, 1fr));gap:16px;justify-content:center;">
+      <!-- Uploaded frames will appear here -->
+    </div>
   </div>
 </div>
 

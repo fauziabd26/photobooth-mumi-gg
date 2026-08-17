@@ -630,12 +630,38 @@ function goTo(id){
 }
 function goBack(to){
   if(to==='sgrid'){stopCamera();goTo('sgrid');}
-  else if(to==='sc'){placedStickers=[];document.querySelectorAll('.placed-sticker').forEach(s=>s.remove());goTo('sc');if(!stream)initCamera();}
+  else if(to==='sc'){placedStickers=[];document.querySelectorAll('.placed-sticker').forEach(s=>s.remove());goTo('sc');if(!stream)initCamera();updateEditorBtnVisibility();}
   else if(to==='sw'){stopCamera();startOver();}
 }
 function startOver(){
   activeSessionCode='true';
   photos=[];currentSlot=0;shooting=false;sequenceRunning=false;bgOn=false;bgColor='#ffffff';bgRef=null;selFilter=FILTERS[0];mirrorOn=true;placedStickers=[];document.querySelectorAll('.placed-sticker').forEach(s=>s.remove());goTo('sw');
+}
+
+function updateEditorBtnVisibility() {
+  const allFilled = photos.every(p => p);
+  const gotoBtn = document.getElementById('btn-goto-editor');
+  const shootBtn = document.getElementById('btn-shoot');
+  const autoBtn = document.getElementById('btn-auto');
+  const retakeBtn = document.getElementById('btn-retake');
+  
+  if (gotoBtn && shootBtn && autoBtn) {
+    if (allFilled) {
+      gotoBtn.style.display = 'inline-block';
+      shootBtn.style.display = 'none';
+      autoBtn.style.display = 'none';
+      if (retakeBtn) retakeBtn.style.display = 'inline-block';
+      const label = document.getElementById('slot-label');
+      if (label) label.innerHTML = `Foto <b style="color:#f472b6">${photos.length}</b> / ${photos.length}`;
+      const ptxt = document.getElementById('ptxt');
+      if (ptxt) ptxt.textContent = '✅ Semua foto diambil! Klik tombol hijau.';
+    } else {
+      gotoBtn.style.display = 'none';
+      shootBtn.style.display = 'inline-block';
+      autoBtn.style.display = 'inline-block';
+      if (retakeBtn) retakeBtn.style.display = photos.some(p => p) ? 'inline-block' : 'none';
+    }
+  }
 }
 
 /* ══════════════════════════════════
@@ -724,13 +750,18 @@ function buildCameraUI(){
         '<div class="cam-acts">' +
           '<button class="btn-shoot" id="btn-shoot" onclick="startSequence(false)">📷 Foto! (' + timerSecs + ' dtk)</button>' +
           '<button class="btnsm on" id="btn-auto" onclick="startSequence(true)">🚀 Auto</button>' +
+          '<button class="btn-shoot" id="btn-goto-editor" style="display:none;background:#22c55e;color:#111;font-weight:bold" onclick="stopCamera();buildThemeScreen();schedulePreview();goTo(\'sth\');">Lanjut ke Editor ➡️</button>' +
           '<button class="btnsm" id="btn-retake" style="display:none" onclick="retakePhoto()">🔄 Ulang</button>' +
         '</div>' +
         '<p class="ptxt" id="ptxt">Berpose dan tekan tombol 📸</p>' +
       '</div>' +
     '</div>' +
+    '<button class="floating-strip-btn" id="floating-strip-btn" onclick="toggleMobileStrip(true)">🎞️</button>' +
     '<div class="strip-panel" id="strip-panel">' +
-      '<div class="strip-hd">🎞️ ' + selLayout.name + '</div>' +
+      '<div class="strip-hd">' +
+        '<span>🎞️ ' + selLayout.name + '</span>' +
+        '<button class="btn-close-strip" onclick="toggleMobileStrip(false)">✕</button>' +
+      '</div>' +
       '<div class="slot-wrap" id="slot-wrap"></div>' +
     '</div>';
 
@@ -738,6 +769,13 @@ function buildCameraUI(){
   buildFilterChipsCam();
   drawCamGridOverlay();
   document.getElementById('upload-input').onchange = handleUpload;
+}
+
+function toggleMobileStrip(show) {
+  const panel = document.getElementById('strip-panel');
+  if (panel) {
+    panel.classList.toggle('open', show);
+  }
 }
 
 /* ══════════════════════════════════
@@ -785,7 +823,7 @@ function handleUpload(e){
       if(loaded===toFill.length){
         const allFilled=photos.every(p=>p);
         if(allFilled){ setTimeout(()=>{stopCamera();buildThemeScreen();schedulePreview();goTo('sth');},400); }
-        else{ currentSlot=photos.findIndex(p=>!p); setActiveSlot(currentSlot); toast(`${loaded} foto diupload ✅ Sisa ${selLayout.n-photos.filter(p=>p).length} foto lagi`); }
+        else{ currentSlot=photos.findIndex(p=>!p); setActiveSlot(currentSlot); toast(`${loaded} foto diupload ✅ Sisa ${selLayout.n-photos.filter(p=>p).length} foto lagi`); updateEditorBtnVisibility(); }
       }
     };
     reader.readAsDataURL(file);
@@ -824,6 +862,7 @@ async function initCamera(){
     stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:1280},height:{ideal:720}},audio:false});
     const vid=document.getElementById('video');vid.srcObject=stream;
     await new Promise(r=>{vid.onloadedmetadata=r;});vid.play();startFilterLoop();
+    updateEditorBtnVisibility();
   }catch(e){document.getElementById('merr').classList.add('vis');}
 }
 function stopCamera(){
@@ -964,12 +1003,13 @@ function captureFrame(onDone){
 }
 function fillSlot(i,url){const s=document.getElementById('slot-'+i);if(!s)return;s.innerHTML=`<img src="${url}" alt="Foto ${i+1}">`;s.classList.add('filled');s.classList.remove('active');}
 function setActiveSlot(i){for(let j=0;j<photos.length;j++){const s=document.getElementById('slot-'+j);if(s&&!photos[j])s.classList.toggle('active',j===i);}}
-function retakePhoto(){for(let i=photos.length-1;i>=0;i--){if(photos[i]){photos[i]=null;currentSlot=i;const s=document.getElementById('slot-'+i);s.innerHTML=`<div class="slot-n">${i+1}</div>`;s.classList.remove('filled');s.classList.add('active');break;}}document.getElementById('btn-shoot').disabled=false;document.getElementById('btn-auto').disabled=false;document.getElementById('slot-label').innerHTML=`Foto <b style="color:#f472b6">${currentSlot+1}</b> / ${photos.length}`;document.getElementById('ptxt').textContent='Berpose dan tekan tombol 📸';if(!photos.some(p=>p))document.getElementById('btn-retake').style.display='none';}
+function retakePhoto(){for(let i=photos.length-1;i>=0;i--){if(photos[i]){photos[i]=null;currentSlot=i;const s=document.getElementById('slot-'+i);s.innerHTML=`<div class="slot-n">${i+1}</div>`;s.classList.remove('filled');s.classList.add('active');break;}}document.getElementById('btn-shoot').disabled=false;document.getElementById('btn-auto').disabled=false;document.getElementById('slot-label').innerHTML=`Foto <b style="color:#f472b6">${currentSlot+1}</b> / ${photos.length}`;document.getElementById('ptxt').textContent='Berpose dan tekan tombol 📸';if(!photos.some(p=>p))document.getElementById('btn-retake').style.display='none';updateEditorBtnVisibility();}
 
 /* ══════════════════════════════════
    THEME SCREEN BUILD
 ══════════════════════════════════ */
-function buildThemeScreen(){
+async function buildThemeScreen(){
+  await loadCustomThemes();
   buildFilterGridTh();buildThemeGrid();buildFrameColors();buildStickerUI();
   placedStickers=[];
   // Observe canvas-outer size changes and re-render
@@ -1110,6 +1150,20 @@ function clearAllStickers(){placedStickers=[];document.querySelectorAll('.placed
 function toggleAcc(id){
   const sec=document.getElementById(id);
   sec.classList.toggle('open');
+}
+
+function switchMobileTab(id) {
+  document.querySelectorAll('.acc-section').forEach(sec => {
+    sec.classList.remove('open');
+  });
+  const target = document.getElementById(id);
+  if (target) target.classList.add('open');
+  
+  document.querySelectorAll('.m-tab').forEach(tab => {
+    tab.classList.remove('active');
+  });
+  const targetBtn = Array.from(document.querySelectorAll('.m-tab')).find(btn => btn.getAttribute('onclick').includes(id));
+  if (targetBtn) targetBtn.classList.add('active');
 }
 function schedulePreview(){
   clearTimeout(prevDebounce);
@@ -1254,6 +1308,19 @@ async function drawStrip(canvas,W){
     img.onerror=()=>res();
     img.src=photos[i];
   })));
+
+  // Draw custom PNG overlay if active
+  if (selTheme.customImgSrc) {
+    await new Promise(res => {
+      const img = new Image();
+      img.onload = () => {
+        ctx.drawImage(img, 0, 0, W, H);
+        res();
+      };
+      img.onerror = () => res();
+      img.src = selTheme.customImgSrc;
+    });
+  }
 
   // Decorative emoji border
   selTheme.deco(ctx,W,H);
@@ -1541,6 +1608,7 @@ function startOperator(code) {
   document.getElementById('op-preview-container').innerHTML = '<p id="op-search-status" style="color:#aaa;font-size:14px;">Masukkan kode unik warga untuk mencari foto.</p>';
   document.getElementById('op-status').style.background = '#eab308';
   receivedPhotos = [];
+  broadcastFrames();
   
   // Generate QR Code link so users scanning this will auto-connect to the correct room channel
   const link = window.location.origin + window.location.pathname + '?room=' + encodeURIComponent(code);
@@ -1630,6 +1698,163 @@ function printOperatorImage(url) {
     </body></html>`);
   win.document.close();
   win.onload=()=>{ win.focus(); setTimeout(()=>win.print(), 500); };
+}
+// Operator Custom Frame management functions
+function switchOpView(viewName) {
+  document.getElementById('op-tab-print').classList.toggle('active', viewName === 'print');
+  document.getElementById('op-tab-frames').classList.toggle('active', viewName === 'frames');
+  document.getElementById('op-view-print').style.display = viewName === 'print' ? 'block' : 'none';
+  document.getElementById('op-view-frames').style.display = viewName === 'frames' ? 'block' : 'none';
+  if (viewName === 'frames') {
+    renderOpFrames();
+  }
+}
+
+function handleFrameUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    const dataUrl = event.target.result;
+    const id = 'custom_' + Date.now();
+    const name = file.name.replace(/\.[^/.]+$/, "");
+    const frames = JSON.parse(localStorage.getItem('mumi_custom_frames') || '[]');
+    frames.push({ id, name, dataUrl, is_active: true, is_pin: false });
+    localStorage.setItem('mumi_custom_frames', JSON.stringify(frames));
+    renderOpFrames();
+    broadcastFrames();
+    toast('✅ Bingkai berhasil diupload!');
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+}
+
+function renderOpFrames() {
+  const grid = document.getElementById('op-frames-grid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  const frames = JSON.parse(localStorage.getItem('mumi_custom_frames') || '[]');
+  
+  if (frames.length === 0) {
+    grid.innerHTML = '<p style="color:#aaa;font-size:14px;grid-column:1/-1;margin-top:20px;">Belum ada bingkai kustom dari panitia.</p>';
+    return;
+  }
+  
+  frames.forEach(frame => {
+    const card = document.createElement('div');
+    card.className = 'op-card';
+    card.style.cssText = 'background:rgba(255,255,255,0.05);border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.1);display:flex;flex-direction:column;width:130px;';
+    card.innerHTML = `
+      <div style="position:relative;background:#111;height:180px;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+        <img src="${frame.dataUrl}" style="max-width:100%;max-height:100%;object-fit:contain;">
+        <div style="position:absolute;top:5px;right:5px;background:rgba(0,0,0,0.6);border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;color:${frame.is_pin ? '#eab308' : '#aaa'};cursor:pointer;font-size:16px;" onclick="toggleFramePin('${frame.id}')">
+          ${frame.is_pin ? '★' : '☆'}
+        </div>
+      </div>
+      <div style="padding:8px;font-size:11px;text-align:center;font-weight:bold;text-overflow:ellipsis;overflow:hidden;white-space:nowrap;color:#fff;">
+        ${frame.name}
+      </div>
+      <div style="display:flex;border-top:1px solid rgba(255,255,255,0.1);padding:6px;gap:6px;justify-content:center;align-items:center;background:rgba(0,0,0,0.2);">
+        <label style="font-size:10px;color:#aaa;display:flex;align-items:center;gap:4px;cursor:pointer;">
+          <input type="checkbox" ${frame.is_active ? 'checked' : ''} onchange="toggleFrameActive('${frame.id}')"> Gunakan
+        </label>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function toggleFrameActive(id) {
+  const frames = JSON.parse(localStorage.getItem('mumi_custom_frames') || '[]');
+  const frame = frames.find(f => f.id === id);
+  if (frame) {
+    frame.is_active = !frame.is_active;
+    if (!frame.is_active) frame.is_pin = false;
+    localStorage.setItem('mumi_custom_frames', JSON.stringify(frames));
+    renderOpFrames();
+    broadcastFrames();
+  }
+}
+
+function toggleFramePin(id) {
+  const frames = JSON.parse(localStorage.getItem('mumi_custom_frames') || '[]');
+  frames.forEach(f => {
+    if (f.id === id) {
+      f.is_pin = !f.is_pin;
+      if (f.is_pin) f.is_active = true;
+    } else {
+      f.is_pin = false;
+    }
+  });
+  localStorage.setItem('mumi_custom_frames', JSON.stringify(frames));
+  renderOpFrames();
+  broadcastFrames();
+}
+
+async function broadcastFrames() {
+  const code = document.getElementById('op-room-lbl').textContent;
+  if (!code || code === '-') return;
+  const frames = JSON.parse(localStorage.getItem('mumi_custom_frames') || '[]');
+  try {
+    const topic = `mumi_pb_${code.toLowerCase()}_config`;
+    await fetch(`https://ntfy.sh/${topic}`, {
+      method: 'POST',
+      body: JSON.stringify(frames),
+      headers: { 'Title': 'CONFIG_THEMES' }
+    });
+  } catch(e) {
+    console.error('Gagal broadcast config:', e);
+  }
+}
+
+// Client Custom Themes fetch functions
+async function loadCustomThemes() {
+  const room = window.clientRoomCode || 'mumi81';
+  try {
+    const res = await fetch(`https://ntfy.sh/mumi_pb_${room.toLowerCase()}_config/json?poll=1`);
+    if (res.ok) {
+      const text = await res.text();
+      const lines = text.trim().split('\n').filter(Boolean);
+      if (lines.length > 0) {
+        const lastMsg = JSON.parse(lines[lines.length - 1]);
+        if (lastMsg.message) {
+          const config = JSON.parse(lastMsg.message);
+          applyCustomThemes(config);
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Gagal memuat tema kustom:', err);
+  }
+}
+
+function applyCustomThemes(config) {
+  THEMES = THEMES.filter(t => !t.isCustom);
+  config.forEach(theme => {
+    if (theme.is_active) {
+      const customTheme = {
+        id: theme.id,
+        name: theme.name,
+        emoji: '🖼️',
+        bg: '#ffffff',
+        customImgSrc: theme.dataUrl,
+        stripBg: (c, w, h) => {
+          c.fillStyle = '#ffffff';
+          c.fillRect(0, 0, w, h);
+        },
+        border: 'transparent',
+        text: '#000000',
+        deco: (c, w, h) => {},
+        isCustom: true
+      };
+      THEMES.push(customTheme);
+      if (theme.is_pin) {
+        selTheme = customTheme;
+      }
+    }
+  });
+  const grid = document.getElementById('tgrid');
+  if (grid) buildThemeGrid();
 }
 
 /* INIT */
