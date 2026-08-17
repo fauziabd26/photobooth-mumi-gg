@@ -624,7 +624,6 @@ function toast(msg,dur=2200){const t=document.getElementById('toast');t.textCont
    NAV
 ══════════════════════════════════ */
 function goTo(id){
-  if(id==='sw') activeSessionCode='';
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   window.scrollTo(0,0);
@@ -635,7 +634,7 @@ function goBack(to){
   else if(to==='sw'){stopCamera();startOver();}
 }
 function startOver(){
-  activeSessionCode='';
+  activeSessionCode='true';
   photos=[];currentSlot=0;shooting=false;sequenceRunning=false;bgOn=false;bgColor='#ffffff';bgRef=null;selFilter=FILTERS[0];mirrorOn=true;placedStickers=[];document.querySelectorAll('.placed-sticker').forEach(s=>s.remove());goTo('sw');
 }
 
@@ -1422,11 +1421,12 @@ function copyShareLink(){navigator.clipboard.writeText(location.href).then(()=>t
 ══════════════════════════════════ */
 let roomMode = '';
 let opEventSource = null;
-let activeSessionCode = ''; // Track if user has active photos
+let activeSessionCode = 'true'; // Active by default on client side
 
-// Warn user before refresh if they have an active session
+// Warn user before refresh if they are on a client screen
 window.addEventListener('beforeunload', (e) => {
-  if (activeSessionCode) {
+  const isOpScreen = document.getElementById('s-operator')?.classList.contains('active');
+  if (!isOpScreen && activeSessionCode) {
     e.preventDefault();
     e.returnValue = 'Foto kamu belum disimpan/dikirim. Yakin ingin keluar?';
     return e.returnValue;
