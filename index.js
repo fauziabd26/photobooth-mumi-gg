@@ -1405,12 +1405,8 @@ let roomMode = '';
 let opEventSource = null;
 
 function openRoomModal(mode) {
-  if (mode === 'client' && window.clientRoomCode) {
-    sendToOperator(window.clientRoomCode);
-    return;
-  }
   roomMode = mode;
-  document.getElementById('room-input').value = '';
+  document.getElementById('room-input').value = window.clientRoomCode || ''; // Default to auto-read code if exists, but still prompt
   document.getElementById('room-modal').classList.add('vis');
   setTimeout(()=>document.getElementById('room-input').focus(), 100);
 }
