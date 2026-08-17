@@ -1492,10 +1492,9 @@ let activeSessionCode = 'true'; // Active by default on client side
 
 // Warn user before refresh if they are on a client screen
 window.addEventListener('beforeunload', (e) => {
-  const isOpScreen = document.getElementById('s-operator')?.classList.contains('active');
-  if (!isOpScreen && activeSessionCode) {
+  if (activeSessionCode) {
     e.preventDefault();
-    e.returnValue = 'Foto kamu belum disimpan/dikirim. Yakin ingin keluar?';
+    e.returnValue = 'Foto atau data sesi kamu belum disimpan. Yakin ingin keluar?';
     return e.returnValue;
   }
 });
