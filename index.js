@@ -731,7 +731,7 @@ function buildCameraUI(){
       '</div>' +
       '<div class="cam-ftr">' +
         '<div class="pbar-w"><div class="pbar-f" id="pbar"></div></div>' +
-        '<div><div class="sec-mini" style="margin-bottom:6px">✨ Filter</div><div class="frow" id="filter-row-cam"></div></div>' +
+        '' +
         '<div class="bg-row">' +
           '<button class="btnsm" id="btn-rmbg" onclick="toggleBg()">🪄 Hapus BG</button>' +
           '<div class="swrow" id="swrow">' +
@@ -811,6 +811,10 @@ function handleUpload(e){
   const emptySlots=[];
   for(let i=0;i<selLayout.n;i++) if(!photos[i]) emptySlots.push(i);
   if(!emptySlots.length){ toast('Semua slot sudah terisi! Klik 🔄 Ulang dulu'); return; }
+  
+  if (files.length > emptySlots.length) {
+    toast(`⚠️ Slot sisa ${emptySlots.length}, hanya mengambil ${emptySlots.length} foto teratas.`);
+  }
   const toFill=files.slice(0,emptySlots.length);
   let loaded=0;
   toFill.forEach((file,idx)=>{
@@ -1621,6 +1625,7 @@ function startOperator(code) {
   }
   document.getElementById('op-status').style.background = '#eab308';
   receivedPhotos = [];
+  pollNtfyCache(code);
   broadcastFrames();
   
   // Generate QR Code link so users scanning this will auto-connect to the correct room channel
@@ -1658,6 +1663,36 @@ function startOperator(code) {
       renderOpQueue();
     }
   };
+}
+
+async function pollNtfyCache(code) {
+  try {
+    const topic = `mumi_pb_${code.toLowerCase()}`;
+    const res = await fetch(`https://ntfy.sh/${topic}/json?poll=1`);
+    if (res.ok) {
+      const text = await res.text();
+      const lines = text.trim().split('\n').filter(Boolean);
+      lines.forEach(line => {
+        try {
+          const data = JSON.parse(line);
+          if (data.event === 'message' && data.attachment) {
+            let rCode = 'FOTO';
+            if (data.title && data.title.startsWith('FOTO_')) {
+              rCode = data.title.replace('FOTO_', '').toUpperCase();
+            } else if (data.attachment.name && data.attachment.name.startsWith('pb_')) {
+              rCode = (data.attachment.name.split('_')[1] || 'FOTO').toUpperCase();
+            }
+            if (!receivedPhotos.some(p => p.url === data.attachment.url)) {
+              receivedPhotos.push({ url: data.attachment.url, code: rCode });
+            }
+          }
+        } catch(e) {}
+      });
+      renderOpQueue();
+    }
+  } catch(e) {
+    console.error('Failed to poll ntfy cache:', e);
+  }
 }
 
 function renderOpQueue() {
