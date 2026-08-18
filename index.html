@@ -24,6 +24,10 @@
     <button class="btn-start" onclick="goTo('sgrid')">✨ Mulai Foto Sekarang</button>
     <button class="btn-start" style="background:rgba(255,255,255,.08);box-shadow:none;border:1px solid rgba(255,255,255,.2);font-size:16px;padding:17px 28px" onclick="goTo('sgrid');currentOrient='portrait';renderLayoutGrid()" title="Pilih layout lalu upload foto dari galeri">📂 Upload dari Galeri</button>
   </div>
+  <!-- Last Receipt Info -->
+  <div id="last-receipt-box" style="display:none;margin-top:20px;padding:10px 20px;background:rgba(244,114,182,0.1);border:1px solid rgba(244,114,182,0.3);border-radius:100px;font-size:13px;color:#fff;cursor:pointer;" onclick="showLastReceiptModal()">
+    🏷️ Kode cetak foto terakhir: <strong id="last-receipt-val" style="color:var(--pk);font-size:14px;letter-spacing:1px;margin-left:4px;">-</strong>
+  </div>
   <div class="feats">
     <div class="feat"><span class="ic">🖼️</span><p>9 layout grid</p></div>
     <div class="feat"><span class="ic">✨</span><p>12+ filter</p></div>

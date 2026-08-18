@@ -1557,11 +1557,15 @@ async function sendToOperator(room, receiptCode) {
         // Clear active session since it's safely sent
         activeSessionCode = '';
         
+        // Save to local storage for recovery/restore option
+        localStorage.setItem('mumi_last_receipt', receiptCode);
+        updateLastReceiptBox();
+
         // Show the receipt code in a nice alert
         const modal = document.getElementById('room-modal');
         modal.classList.add('vis');
         document.getElementById('room-title').innerHTML = '🎉 Berhasil Dikirim!';
-        document.getElementById('room-desc').innerHTML = `Tunjukkan kode unik ini ke Operator untuk dicetak:<br><br><strong style="font-size:36px;color:var(--pk);letter-spacing:4px;">${receiptCode}</strong>`;
+        document.getElementById('room-desc').innerHTML = `Tunjukkan kode unik ini ke Operator untuk dicetak:<br><br><strong style="font-size:36px;color:var(--pk);letter-spacing:4px;">${receiptCode}</strong><br><br><small style="font-size:11px;color:#ef4444;display:block;margin-top:10px;">⚠️ Penting: Foto di server operator akan dihapus otomatis setelah 24 jam!</small>`;
         // Hide input and keep only close button
         document.getElementById('room-input').style.display = 'none';
         const okBtn = modal.querySelector('button[onclick="submitRoomCode()"]');
@@ -1858,9 +1862,52 @@ function toggleMoreOptionsModal(show) {
   }
 }
 
+function updateLastReceiptBox() {
+  const lastCode = localStorage.getItem('mumi_last_receipt');
+  const box = document.getElementById('last-receipt-box');
+  const val = document.getElementById('last-receipt-val');
+  if (lastCode && box && val) {
+    box.style.display = 'inline-flex';
+    box.style.alignItems = 'center';
+    val.textContent = lastCode;
+  } else if (box) {
+    box.style.display = 'none';
+  }
+}
+
+function showLastReceiptModal() {
+  const lastCode = localStorage.getItem('mumi_last_receipt');
+  if (!lastCode) return;
+  
+  const modal = document.getElementById('room-modal');
+  modal.classList.add('vis');
+  document.getElementById('room-title').innerHTML = '🎉 Kode Terakhir Anda';
+  document.getElementById('room-desc').innerHTML = `Tunjukkan kode unik ini ke Operator untuk dicetak:<br><br><strong style="font-size:36px;color:var(--pk);letter-spacing:4px;">${lastCode}</strong><br><br><small style="font-size:11px;color:#ef4444;display:block;margin-top:10px;">⚠️ Penting: Foto di server operator akan dihapus otomatis setelah 24 jam!</small>`;
+  document.getElementById('room-input').style.display = 'none';
+  const okBtn = modal.querySelector('button[onclick="submitRoomCode()"]');
+  if (okBtn) okBtn.style.display = 'none';
+  const cancelBtn = modal.querySelector('button[onclick*="room-modal"]');
+  if (cancelBtn) {
+    cancelBtn.textContent = 'Selesai';
+    cancelBtn.onclick = () => {
+      modal.classList.remove('vis');
+      // reset modal for next time
+      setTimeout(() => {
+        document.getElementById('room-title').textContent = 'Masukkan Kode Room';
+        document.getElementById('room-desc').textContent = 'Kode ini digunakan untuk menyambungkan perangkatmu dengan operator.';
+        document.getElementById('room-input').style.display = 'block';
+        if (okBtn) okBtn.style.display = 'block';
+        cancelBtn.textContent = 'Batal';
+        cancelBtn.onclick = () => modal.classList.remove('vis');
+      }, 300);
+    };
+  }
+}
+
 /* INIT */
 document.addEventListener('DOMContentLoaded', function(){
   renderLayoutGrid();
+  updateLastReceiptBox();
 
   // Auto-read room code if accessing via QR
   const params = new URLSearchParams(window.location.search);
