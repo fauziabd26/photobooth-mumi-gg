@@ -834,11 +834,27 @@ function handleUpload(e){
 /* ══════════════════════════════════
    FILTER CHIPS (camera)
 ══════════════════════════════════ */
+function applyLiveFilter() {
+  const vid = document.getElementById('video');
+  const fc = document.getElementById('filtercnv');
+  const bgc = document.getElementById('bgcnv');
+  const filterStyle = selFilter ? selFilter.css : 'none';
+  if (vid) vid.style.filter = filterStyle;
+  if (fc) fc.style.filter = filterStyle;
+  if (bgc) bgc.style.filter = filterStyle;
+}
+
 function buildFilterChipsCam(){
   const row=document.getElementById('filter-row-cam');if(!row)return;row.innerHTML='';
   FILTERS.forEach(f=>{
     const b=document.createElement('button');b.className='fchip'+(f.id===selFilter.id?' on':'');b.textContent=f.name;
-    b.onclick=()=>{selFilter=f;document.querySelectorAll('.fchip').forEach(c=>c.classList.remove('on'));b.classList.add('on');document.querySelectorAll('.fopt').forEach((o,i)=>o.classList.toggle('sel',FILTERS[i].id===f.id));};
+    b.onclick=()=>{
+      selFilter=f;
+      document.querySelectorAll('.fchip').forEach(c=>c.classList.remove('on'));
+      b.classList.add('on');
+      document.querySelectorAll('.fopt').forEach((o,i)=>o.classList.toggle('sel',FILTERS[i].id===f.id));
+      applyLiveFilter();
+    };
     row.appendChild(b);
   });
 }
@@ -862,6 +878,7 @@ async function initCamera(){
     stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:1280},height:{ideal:720}},audio:false});
     const vid=document.getElementById('video');vid.srcObject=stream;
     await new Promise(r=>{vid.onloadedmetadata=r;});vid.play();startFilterLoop();
+    applyLiveFilter();
     updateEditorBtnVisibility();
   }catch(e){document.getElementById('merr').classList.add('vis');}
 }
