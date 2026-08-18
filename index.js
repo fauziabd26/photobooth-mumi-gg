@@ -1575,8 +1575,7 @@ async function sendToOperator(room, receiptCode) {
         activeSessionCode = '';
         
         // Save to local storage for recovery/restore option
-        localStorage.setItem('mumi_last_receipt', receiptCode);
-        updateLastReceiptBox();
+        saveToHistory(receiptCode, fc.toDataURL('image/jpeg', 0.45));
 
         // Show the receipt code in a nice alert
         const modal = document.getElementById('room-modal');
@@ -1657,8 +1656,8 @@ function startOperator(code) {
         rCode = (data.attachment.name.split('_')[1] || 'FOTO').toUpperCase();
       }
       
-      // Save to in-memory list
-      receivedPhotos.push({ url: data.attachment.url, code: rCode });
+      // Save to in-memory list (newest first)
+      receivedPhotos.unshift({ url: data.attachment.url, code: rCode });
       toast(`📥 Foto baru masuk!`);
       renderOpQueue();
     }
@@ -1683,7 +1682,7 @@ async function pollNtfyCache(code) {
               rCode = (data.attachment.name.split('_')[1] || 'FOTO').toUpperCase();
             }
             if (!receivedPhotos.some(p => p.url === data.attachment.url)) {
-              receivedPhotos.push({ url: data.attachment.url, code: rCode });
+              receivedPhotos.unshift({ url: data.attachment.url, code: rCode });
             }
           }
         } catch(e) {}
@@ -1692,6 +1691,13 @@ async function pollNtfyCache(code) {
     }
   } catch(e) {
     console.error('Failed to poll ntfy cache:', e);
+  }
+}
+
+function zoomPreviewCanvas() {
+  const canvas = document.getElementById('prev-canvas');
+  if (canvas) {
+    openFullscreenPreview(canvas.toDataURL('image/jpeg', 0.95));
   }
 }
 
@@ -1957,45 +1963,86 @@ function toggleMoreOptionsModal(show) {
 }
 
 function updateLastReceiptBox() {
-  const lastCode = localStorage.getItem('mumi_last_receipt');
   const box = document.getElementById('last-receipt-box');
-  const val = document.getElementById('last-receipt-val');
-  if (lastCode && box && val) {
+  if (!box) return;
+  let history = [];
+  try {
+    history = JSON.parse(localStorage.getItem('mumi_history') || '[]');
+  } catch(e) {}
+  
+  if (history.length > 0) {
     box.style.display = 'inline-flex';
-    box.style.alignItems = 'center';
-    val.textContent = lastCode;
-  } else if (box) {
+  } else {
     box.style.display = 'none';
   }
 }
 
-function showLastReceiptModal() {
-  const lastCode = localStorage.getItem('mumi_last_receipt');
-  if (!lastCode) return;
-  
-  const modal = document.getElementById('room-modal');
+function saveToHistory(code, dataUrl) {
+  let history = [];
+  try {
+    history = JSON.parse(localStorage.getItem('mumi_history') || '[]');
+  } catch(e) {}
+  // Keep only the last 10 photos to stay within LocalStorage limits
+  history.unshift({ code, img: dataUrl, time: Date.now() });
+  if (history.length > 10) history = history.slice(0, 10);
+  localStorage.setItem('mumi_history', JSON.stringify(history));
+  updateLastReceiptBox();
+}
+
+function openHistoryModal() {
+  const modal = document.getElementById('history-modal');
+  if (!modal) return;
   modal.classList.add('vis');
-  document.getElementById('room-title').innerHTML = '🎉 Kode Terakhir Anda';
-  document.getElementById('room-desc').innerHTML = `Tunjukkan kode unik ini ke Operator untuk dicetak:<br><br><strong style="font-size:36px;color:var(--pk);letter-spacing:4px;">${lastCode}</strong><br><br><small style="font-size:11px;color:#ef4444;display:block;margin-top:10px;">⚠️ Penting: Foto di server operator akan dihapus otomatis setelah 24 jam!</small>`;
-  document.getElementById('room-input').style.display = 'none';
-  const okBtn = modal.querySelector('button[onclick="submitRoomCode()"]');
-  if (okBtn) okBtn.style.display = 'none';
-  const cancelBtn = modal.querySelector('button[onclick*="room-modal"]');
-  if (cancelBtn) {
-    cancelBtn.textContent = 'Selesai';
-    cancelBtn.onclick = () => {
-      modal.classList.remove('vis');
-      // reset modal for next time
-      setTimeout(() => {
-        document.getElementById('room-title').textContent = 'Masukkan Kode Room';
-        document.getElementById('room-desc').textContent = 'Kode ini digunakan untuk menyambungkan perangkatmu dengan operator.';
-        document.getElementById('room-input').style.display = 'block';
-        if (okBtn) okBtn.style.display = 'block';
-        cancelBtn.textContent = 'Batal';
-        cancelBtn.onclick = () => modal.classList.remove('vis');
-      }, 300);
-    };
+  
+  const list = document.getElementById('history-list');
+  if (!list) return;
+  list.innerHTML = '';
+  
+  let history = [];
+  try {
+    history = JSON.parse(localStorage.getItem('mumi_history') || '[]');
+  } catch(e) {}
+  
+  if (history.length === 0) {
+    list.innerHTML = '<p style="color:#aaa;font-size:14px;text-align:center;margin-top:20px;">Belum ada riwayat cetak.</p>';
+    return;
   }
+  
+  history.forEach(item => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;background:rgba(255,255,255,0.05);padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);gap:12px;';
+    row.innerHTML = `
+      <div style="width:60px;height:70px;background:#111;border-radius:6px;overflow:hidden;cursor:pointer;position:relative;flex-shrink:0;" onclick="openFullscreenPreview('${item.img}')">
+        <img src="${item.img}" style="width:100%;height:100%;object-fit:cover;">
+        <div style="position:absolute;inset:0;background:rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;">🔍</div>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
+        <span style="font-size:10px;color:#aaa;">KODE CETAK STRUK</span>
+        <strong style="font-size:20px;color:var(--pk);letter-spacing:1px;">${item.code}</strong>
+      </div>
+      <button onclick="openFullscreenPreview('${item.img}')" style="padding:8px 12px;font-size:12px;background:rgba(255,255,255,0.1);color:#fff;border-radius:6px;border:none;cursor:pointer;">🔍 Pratinjau</button>
+    `;
+    list.appendChild(row);
+  });
+}
+
+function closeHistoryModal() {
+  const modal = document.getElementById('history-modal');
+  if (modal) modal.classList.remove('vis');
+}
+
+function openFullscreenPreview(src) {
+  const modal = document.getElementById('fullscreen-modal');
+  const img = document.getElementById('fullscreen-img');
+  if (modal && img) {
+    img.src = src;
+    modal.classList.add('vis');
+  }
+}
+
+function closeFullscreenModal() {
+  const modal = document.getElementById('fullscreen-modal');
+  if (modal) modal.classList.remove('vis');
 }
 
 /* INIT */

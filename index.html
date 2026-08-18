@@ -24,9 +24,9 @@
     <button class="btn-start" onclick="goTo('sgrid')">✨ Mulai Foto Sekarang</button>
     <button class="btn-start" style="background:rgba(255,255,255,.08);box-shadow:none;border:1px solid rgba(255,255,255,.2);font-size:16px;padding:17px 28px" onclick="goTo('sgrid');currentOrient='portrait';renderLayoutGrid()" title="Pilih layout lalu upload foto dari galeri">📂 Upload dari Galeri</button>
   </div>
-  <!-- Last Receipt Info -->
-  <div id="last-receipt-box" style="display:none;margin-top:20px;padding:10px 20px;background:rgba(244,114,182,0.1);border:1px solid rgba(244,114,182,0.3);border-radius:100px;font-size:13px;color:#fff;cursor:pointer;" onclick="showLastReceiptModal()">
-    🏷️ Kode cetak foto terakhir: <strong id="last-receipt-val" style="color:var(--pk);font-size:14px;letter-spacing:1px;margin-left:4px;">-</strong>
+  <!-- Photo History Button -->
+  <div id="last-receipt-box" style="display:none;margin-top:20px;padding:10px 20px;background:rgba(244,114,182,0.1);border:1px solid rgba(244,114,182,0.3);border-radius:100px;font-size:13px;color:#fff;cursor:pointer;" onclick="openHistoryModal()">
+    🎞️ Lihat Riwayat Foto & Kode Cetak
   </div>
   <div class="feats">
     <div class="feat"><span class="ic">🖼️</span><p>9 layout grid</p></div>
@@ -240,7 +240,7 @@
 
     <!-- Active Queue -->
     <h3 style="font-size:12px;color:rgba(255,255,255,0.4);margin-bottom:15px;text-align:left;letter-spacing:1px;text-transform:uppercase;">📥 Antrean Foto Masuk (Klik untuk Validasi & Cetak)</h3>
-    <div id="op-queue-gallery" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(130px, 1fr));gap:16px;justify-content:center;">
+    <div id="op-queue-gallery" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(160px, 1fr));gap:16px;justify-content:center;">
       <p id="op-queue-empty" style="color:#aaa;font-size:14px;grid-column:1/-1;text-align:center;margin-top:20px;">Belum ada foto masuk dari warga.</p>
     </div>
 
@@ -303,6 +303,25 @@
     <button class="sheet-btn" onclick="downloadAs('jpg');toggleMoreOptionsModal(false)">📷 Download JPG</button>
     <button class="sheet-btn" onclick="openShare();toggleMoreOptionsModal(false)">🔗 Bagikan Link</button>
     <button class="sheet-btn" onclick="toggleMoreOptionsModal(false)" style="margin-top:12px;background:rgba(255,255,255,0.05);color:#ef4444;border-color:rgba(239,68,68,0.25)">✕ Tutup</button>
+  </div>
+</div>
+<!-- History Modal -->
+<div class="modal-bg" id="history-modal" onclick="closeHistoryModal()">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:440px;width:90%;max-height:80vh;display:flex;flex-direction:column;padding:20px;">
+    <h3 style="margin-bottom:15px;">🎞️ Riwayat Cetak & Kode</h3>
+    <div id="history-list" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:12px;margin-bottom:15px;padding-right:4px;">
+      <!-- History list will be rendered here dynamically -->
+    </div>
+    <p style="font-size:11px;color:#ef4444;text-align:center;margin-bottom:12px;">⚠️ Penting: Foto di server operator akan dihapus otomatis setelah 24 jam!</p>
+    <button onclick="closeHistoryModal()" style="background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2);width:100%;padding:10px;border-radius:8px;">Tutup</button>
+  </div>
+</div>
+
+<!-- Fullscreen Preview Modal -->
+<div class="modal-bg" id="fullscreen-modal" onclick="closeFullscreenModal()" style="z-index:9999;">
+  <div style="position:relative;max-width:90vw;max-height:90vh;" onclick="event.stopPropagation()">
+    <img id="fullscreen-img" src="" style="max-width:100%;max-height:90vh;object-fit:contain;border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,0.8);">
+    <button onclick="closeFullscreenModal()" style="position:absolute;top:-15px;right:-15px;width:32px;height:32px;border-radius:50%;background:#ef4444;color:#fff;border:none;font-weight:bold;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 10px rgba(0,0,0,0.4)">✕</button>
   </div>
 </div>
 
