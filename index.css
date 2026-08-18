@@ -595,3 +595,92 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
   box-shadow: 0 0 10px rgba(244, 114, 182, 0.4) !important;
   animation: pulseGlow 2s infinite;
 }
+
+/* Visibility helper classes for desktop/mobile views */
+.mobile-only {
+  display: none !important;
+}
+
+@media (max-width: 680px) {
+  .desktop-only {
+    display: none !important;
+  }
+  .mobile-only {
+    display: flex !important;
+  }
+  .dl-bar {
+    display: flex !important;
+    gap: 10px !important;
+    width: 100% !important;
+    padding: 10px 14px !important;
+  }
+  .more-options-btn {
+    width: 48px !important;
+    height: 48px !important;
+    font-size: 24px !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: #fff !important;
+    border-radius: 12px !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0 !important;
+  }
+  .primary-print-btn {
+    background: linear-gradient(135deg, var(--pk), #f97316) !important;
+    color: #111 !important;
+    font-weight: 900 !important;
+    border-radius: 12px !important;
+    border: none !important;
+    font-size: 15px !important;
+    height: 48px !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 15px rgba(244, 114, 182, 0.35);
+  }
+}
+
+/* Bottom Sheet Option drawer for mobile */
+.bottom-sheet {
+  position: absolute;
+  bottom: -360px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 460px;
+  background: rgba(20, 20, 35, 0.95);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border-top-left-radius: 24px;
+  border-top-right-radius: 24px;
+  padding: 24px 20px;
+  box-sizing: border-box;
+  transition: bottom 0.28s cubic-bezier(0.32, 0.94, 0.6, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: none;
+}
+.modal-bg.vis .bottom-sheet {
+  bottom: 0 !important;
+}
+.sheet-btn {
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: bold;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  cursor: pointer;
+  text-align: center;
+  transition: 0.15s;
+}
+.sheet-btn:active {
+  background: rgba(255, 255, 255, 0.15);
+}

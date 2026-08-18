@@ -185,11 +185,16 @@
       <p class="preview-hint">💡 Klik stiker di sidebar kiri untuk tempel ke strip</p>
 
       <div class="dl-bar">
-        <button class="btn-dl primary" onclick="downloadAs('pdf')">📄 PDF</button>
-        <button class="btn-dl secondary" onclick="downloadAs('png')">🖼 PNG</button>
-        <button class="btn-dl secondary" onclick="downloadAs('jpg')">📷 JPG</button>
-        <button class="btn-dl share" onclick="openShare()">🔗 Bagikan</button>
-        <button class="btn-dl secondary" onclick="printStrip()">🖨️ Print</button>
+        <!-- Desktop Buttons -->
+        <button class="btn-dl desktop-only primary" onclick="downloadAs('pdf')">📄 PDF</button>
+        <button class="btn-dl desktop-only secondary" onclick="downloadAs('png')">🖼 PNG</button>
+        <button class="btn-dl desktop-only secondary" onclick="downloadAs('jpg')">📷 JPG</button>
+        <button class="btn-dl desktop-only share" onclick="openShare()">🔗 Bagikan</button>
+        <button class="btn-dl desktop-only secondary" onclick="printStrip()">🖨️ Print</button>
+
+        <!-- Mobile Buttons -->
+        <button class="btn-dl mobile-only primary-print-btn" onclick="printStrip()" style="flex:1;">🖨️ Cetak / Kirim</button>
+        <button class="btn-dl mobile-only more-options-btn" onclick="toggleMoreOptionsModal(true)">⋮</button>
       </div>
     </div>
 
@@ -276,6 +281,18 @@
       <button onclick="copyShareLink()">Salin</button>
     </div>
     <button onclick="document.getElementById('share-modal').classList.remove('vis')" style="margin-top:14px;background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2)">Tutup</button>
+  </div>
+</div>
+
+<!-- Bottom Sheet More Options for Mobile -->
+<div class="modal-bg" id="more-options-modal" onclick="toggleMoreOptionsModal(false)">
+  <div class="bottom-sheet" onclick="event.stopPropagation()">
+    <div style="font-weight:bold;font-size:12px;color:rgba(255,255,255,0.4);margin-bottom:15px;text-align:center;letter-spacing:1px;">PILIHAN EKSPOR LAINNYA</div>
+    <button class="sheet-btn" onclick="downloadAs('pdf');toggleMoreOptionsModal(false)">📄 Download PDF</button>
+    <button class="sheet-btn" onclick="downloadAs('png');toggleMoreOptionsModal(false)">🖼 Download PNG</button>
+    <button class="sheet-btn" onclick="downloadAs('jpg');toggleMoreOptionsModal(false)">📷 Download JPG</button>
+    <button class="sheet-btn" onclick="openShare();toggleMoreOptionsModal(false)">🔗 Bagikan Link</button>
+    <button class="sheet-btn" onclick="toggleMoreOptionsModal(false)" style="margin-top:12px;background:rgba(255,255,255,0.05);color:#ef4444;border-color:rgba(239,68,68,0.25)">✕ Tutup</button>
   </div>
 </div>
 

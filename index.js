@@ -1856,6 +1856,14 @@ function applyCustomThemes(config) {
   if (grid) buildThemeGrid();
 }
 
+function toggleMoreOptionsModal(show) {
+  const modal = document.getElementById('more-options-modal');
+  if (modal) {
+    if (show) modal.classList.add('vis');
+    else modal.classList.remove('vis');
+  }
+}
+
 /* INIT */
 document.addEventListener('DOMContentLoaded', function(){
   renderLayoutGrid();
