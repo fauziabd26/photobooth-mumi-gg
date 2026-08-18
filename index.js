@@ -1510,17 +1510,11 @@ function generateReceiptCode() {
 function openRoomModal(mode) {
   if (mode === 'client') {
     const receiptCode = generateReceiptCode();
-    if (window.clientRoomCode) {
-      sendToOperator(window.clientRoomCode, receiptCode);
-    } else {
-      roomMode = 'client_select_room';
-      window.pendingReceiptCode = receiptCode;
-      document.getElementById('room-title').textContent = 'Koneksi ke Operator';
-      document.getElementById('room-desc').textContent = 'Masukkan Kode Room yang tampil di layar Laptop Operator.';
-      document.getElementById('room-input').value = '';
-      document.getElementById('room-modal').classList.add('vis');
-      setTimeout(()=>document.getElementById('room-input').focus(), 100);
+    // Default room fallback if not set to prevent prompting the user
+    if (!window.clientRoomCode) {
+      window.clientRoomCode = 'mumi81';
     }
+    sendToOperator(window.clientRoomCode, receiptCode);
     return;
   }
   roomMode = mode;
