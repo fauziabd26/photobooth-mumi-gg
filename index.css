@@ -66,7 +66,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 /* ════ CAMERA ════ */
 /* ════ CAMERA ════ */
 #sc{padding:0;overflow:hidden;}
-#sc.active{display:flex;flex-direction:column;height:100vh;max-height:100vh;align-items:center;}
+#sc.active{display:flex;flex-direction:column;height:100vh;height:100dvh;max-height:100vh;max-height:100dvh;align-items:center;}
 #sc .topbar{flex-shrink:0;width:100%;max-width:1200px;}
 /* cam-body: always 2-col — camera big left, strip sidebar right */
 .cam-body{
@@ -162,7 +162,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 
 /* ════ THEME/STICKER SCREEN — 2-col fixed height, no page scroll ════ */
 #sth{padding:0;overflow:hidden;}
-#sth.active{display:flex;flex-direction:column;height:100vh;max-height:100vh;}
+#sth.active{display:flex;flex-direction:column;height:100vh;height:100dvh;max-height:100vh;max-height:100dvh;}
 
 /* topbar + content fill remaining height */
 #sth .topbar{flex-shrink:0;}
@@ -482,6 +482,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
     display:flex!important;
     flex-direction:column-reverse!important;
     height:calc(100vh - 60px)!important;
+    height:calc(100dvh - 60px)!important;
     overflow:hidden!important;
   }
   .theme-sidebar{
@@ -502,7 +503,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
   }
   .feats{grid-template-columns:repeat(2,1fr);}
   .layout-grid{grid-template-columns:repeat(2,1fr);}
-  #sth{height:100vh!important;max-height:100vh!important;overflow:hidden!important;}
+  #sth{height:100vh!important;height:100dvh!important;max-height:100vh!important;max-height:100dvh!important;overflow:hidden!important;}
 }
 /* ══════════════════════════════════
    OPERATOR UI
@@ -545,11 +546,13 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 }
 
 /* Default desktop hide for mobile strip drawer controls */
-.floating-strip-btn {
-  display: none;
-}
-.btn-close-strip {
-  display: none;
+@media (min-width: 901px) {
+  .floating-strip-btn {
+    display: none !important;
+  }
+  .btn-close-strip {
+    display: none !important;
+  }
 }
 
 /* Default desktop hide for mobile editor tabs */

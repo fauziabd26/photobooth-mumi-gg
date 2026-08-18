@@ -719,7 +719,7 @@ function buildCameraUI(){
         '</div>' +
       '</div>' +
       '<div class="vid-wrap">' +
-        '<video id="video" autoplay playsinline muted></video>' +
+        '<video id="video" autoplay playsinline webkit-playsinline muted></video>' +
         '<canvas id="bgcnv"></canvas>' +
         '<canvas id="filtercnv"></canvas>' +
         '<svg class="grid-svg" id="grid-svg"></svg>' +
@@ -1494,8 +1494,8 @@ let activeSessionCode = 'true'; // Active by default on client side
 window.addEventListener('beforeunload', (e) => {
   if (activeSessionCode) {
     e.preventDefault();
-    e.returnValue = 'Foto atau data sesi kamu belum disimpan. Yakin ingin keluar?';
-    return e.returnValue;
+    e.returnValue = ''; // Empty string triggers Safari's default confirmation dialog
+    return '';
   }
 });
 
