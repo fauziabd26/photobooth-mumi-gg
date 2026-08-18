@@ -1510,11 +1510,7 @@ function generateReceiptCode() {
 function openRoomModal(mode) {
   if (mode === 'client') {
     const receiptCode = generateReceiptCode();
-    // Default room fallback if not set to prevent prompting the user
-    if (!window.clientRoomCode) {
-      window.clientRoomCode = 'mumi81';
-    }
-    sendToOperator(window.clientRoomCode, receiptCode);
+    sendToOperator(window.clientRoomCode || 'mumi81', receiptCode);
     return;
   }
   roomMode = mode;
@@ -1602,7 +1598,10 @@ function startOperator(code) {
   goTo('s-operator');
   document.getElementById('op-room-lbl').textContent = code;
   document.getElementById('op-search-input').value = '';
-  document.getElementById('op-preview-container').innerHTML = '<p id="op-search-status" style="color:#aaa;font-size:14px;">Masukkan kode unik warga untuk mencari foto.</p>';
+  const gallery = document.getElementById('op-queue-gallery');
+  if (gallery) {
+    gallery.innerHTML = '<p id="op-queue-empty" style="color:#aaa;font-size:14px;grid-column:1/-1;text-align:center;margin-top:20px;">Belum ada foto masuk dari warga.</p>';
+  }
   document.getElementById('op-status').style.background = '#eab308';
   receivedPhotos = [];
   broadcastFrames();
@@ -1638,15 +1637,61 @@ function startOperator(code) {
       
       // Save to in-memory list
       receivedPhotos.push({ url: data.attachment.url, code: rCode });
-      toast(`📥 Foto baru masuk! (Kode: ${rCode})`);
+      toast(`📥 Foto baru masuk!`);
+      renderOpQueue();
     }
   };
 }
 
+function renderOpQueue() {
+  const gallery = document.getElementById('op-queue-gallery');
+  if (!gallery) return;
+  gallery.innerHTML = '';
+  
+  if (receivedPhotos.length === 0) {
+    gallery.innerHTML = '<p id="op-queue-empty" style="color:#aaa;font-size:14px;grid-column:1/-1;text-align:center;margin-top:20px;">Belum ada foto masuk dari warga.</p>';
+    return;
+  }
+  
+  receivedPhotos.forEach(photo => {
+    const card = document.createElement('div');
+    card.className = 'op-card';
+    card.style.cssText = 'background:rgba(255,255,255,0.05);border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.1);display:flex;flex-direction:column;width:130px;cursor:pointer;position:relative;transition:0.2s;';
+    card.onclick = () => validateAndPrint(photo.url, photo.code);
+    card.innerHTML = `
+      <div style="background:#111;height:180px;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;">
+        <img src="${photo.url}" data-code="${photo.code}" style="max-width:100%;max-height:100%;object-fit:contain;" crossorigin="anonymous">
+      </div>
+      <div class="op-status-label" style="padding:8px;font-size:10px;text-align:center;font-weight:bold;color:var(--pk);background:rgba(244,114,182,0.1);text-overflow:ellipsis;overflow:hidden;white-space:nowrap;">
+        🖨️ Klik untuk Cetak
+      </div>
+    `;
+    gallery.appendChild(card);
+  });
+}
+
+function validateAndPrint(url, code) {
+  const input = prompt("Masukkan PIN/Kode Warga untuk mencetak foto ini:");
+  if (input === null) return;
+  if (input.trim().toUpperCase() === code.toUpperCase()) {
+    toast("✅ Kode Cocok! Membuka dialog print...");
+    const label = Array.from(document.querySelectorAll('.op-card')).find(card => {
+      return card.querySelector('img')?.getAttribute('data-code') === code;
+    })?.querySelector('.op-status-label');
+    
+    if (label) {
+      label.textContent = "🔓 Terverifikasi";
+      label.style.background = "rgba(34,197,94,0.1)";
+      label.style.color = "#22c55e";
+    }
+    printOperatorImage(url);
+  } else {
+    toast("❌ Kode PIN salah!");
+  }
+}
+
 function searchUserPhoto() {
   const query = document.getElementById('op-search-input').value.trim().toUpperCase();
-  const container = document.getElementById('op-preview-container');
-  
   if (!query) {
     toast('Ketik kode pencarian dulu cuy!');
     return;
@@ -1655,22 +1700,19 @@ function searchUserPhoto() {
   const match = receivedPhotos.find(p => p.code === query);
   
   if (match) {
-    container.innerHTML = `
-      <div style="text-align:center;animation:fadeIn 0.3s ease;">
-        <p style="color:#22c55e;font-weight:bold;margin-bottom:12px;font-size:16px;">✅ Kode Cocok! Klik foto di bawah untuk mencetak 🖨️</p>
-        <div style="cursor:pointer;border:3px solid var(--pk);border-radius:12px;overflow:hidden;box-shadow:0 8px 24px rgba(255, 23, 68, 0.2);display:inline-block;" onclick="printOperatorImage('${match.url}')">
-          <img src="${match.url}" crossorigin="anonymous" style="max-height:400px;display:block;object-fit:contain;">
-        </div>
-        <p style="color:#aaa;font-size:12px;margin-top:8px;">Kode Warga: <strong>${match.code}</strong></p>
-      </div>
-    `;
-    // Also auto-trigger print dialog immediately for faster flow
+    toast('✅ Kode cocok! Membuka cetak...');
+    const label = Array.from(document.querySelectorAll('.op-card')).find(card => {
+      return card.querySelector('img')?.getAttribute('data-code') === query;
+    })?.querySelector('.op-status-label');
+    
+    if (label) {
+      label.textContent = "🔓 Terverifikasi";
+      label.style.background = "rgba(34,197,94,0.1)";
+      label.style.color = "#22c55e";
+    }
     printOperatorImage(match.url);
   } else {
-    container.innerHTML = `
-      <p id="op-search-status" style="color:#ef4444;font-weight:bold;font-size:14px;">❌ Kode [${query}] tidak ditemukan atau salah!</p>
-    `;
-    toast('❌ Kode tidak ditemukan!');
+    toast('❌ Kode struk tidak ditemukan!');
   }
 }
 
@@ -1909,15 +1951,17 @@ document.addEventListener('DOMContentLoaded', function(){
   renderLayoutGrid();
   updateLastReceiptBox();
 
-  // Auto-read room code if accessing via QR
+  // Auto-read room code, default to 'mumi81' for instant sync
   const params = new URLSearchParams(window.location.search);
-  window.clientRoomCode = params.get('room') || '';
-  if (window.clientRoomCode) {
+  window.clientRoomCode = params.get('room') || 'mumi81';
+  
+  if (params.get('room')) {
     toast(`🔌 Terhubung otomatis ke Operator Room: ${window.clientRoomCode}`, 4000);
   }
 
-  // Detect operator mode URL parameters
+  // Detect operator mode URL parameters and start automatically on room
   if (params.get('mode') === 'operator' || params.has('op')) {
-    openRoomModal('operator');
+    const opRoom = params.get('room') || 'mumi81';
+    startOperator(opRoom);
   }
 });

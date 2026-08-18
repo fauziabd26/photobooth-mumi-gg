@@ -229,17 +229,23 @@
   </div>
 
   <!-- VIEW 1: PRINT VIEW -->
-  <div id="op-view-print">
-    <div style="display:flex;flex-direction:column;align-items:center;margin:20px 0;gap:12px;">
-      <div style="display:flex;gap:10px;width:100%;max-width:420px;padding:0 20px;">
-        <input type="text" id="op-search-input" placeholder="Ketik Kode (misal: B9K5)" style="flex:1;padding:12px;font-size:18px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(0,0,0,0.3);color:#fff;text-align:center;text-transform:uppercase;outline:none;font-family:inherit;" autocomplete="off">
-        <button onclick="searchUserPhoto()" style="padding:12px 20px;font-size:16px;background:var(--pk);color:#111;font-weight:bold;border-radius:8px;border:none;cursor:pointer;">Cari 🔍</button>
+  <div id="op-view-print" style="max-width:900px;margin:0 auto;padding:20px;">
+    <!-- Manual Search Backup -->
+    <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:30px;gap:12px;">
+      <div style="display:flex;gap:10px;width:100%;max-width:420px;">
+        <input type="text" id="op-search-input" placeholder="Cari Kode Struk Warga..." style="flex:1;padding:12px;font-size:16px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(0,0,0,0.3);color:#fff;text-align:center;text-transform:uppercase;outline:none;font-family:inherit;" autocomplete="off">
+        <button onclick="searchUserPhoto()" style="padding:12px 20px;font-size:15px;background:var(--pk);color:#111;font-weight:bold;border-radius:8px;border:none;cursor:pointer;">Cari 🔍</button>
       </div>
     </div>
-    <div id="op-preview-container" style="display:flex;flex-direction:column;align-items:center;gap:16px;padding:20px;min-height:200px;">
-      <!-- Search result will appear here -->
-      <p id="op-search-status" style="color:#aaa;font-size:14px;">Masukkan kode unik warga untuk mencari foto.</p>
+
+    <!-- Active Queue -->
+    <h3 style="font-size:12px;color:rgba(255,255,255,0.4);margin-bottom:15px;text-align:left;letter-spacing:1px;text-transform:uppercase;">📥 Antrean Foto Masuk (Klik untuk Validasi & Cetak)</h3>
+    <div id="op-queue-gallery" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(130px, 1fr));gap:16px;justify-content:center;">
+      <p id="op-queue-empty" style="color:#aaa;font-size:14px;grid-column:1/-1;text-align:center;margin-top:20px;">Belum ada foto masuk dari warga.</p>
     </div>
+
+    <!-- Hidden element just to satisfy old script references if needed -->
+    <div id="op-preview-container" style="display:none;"></div>
   </div>
 
   <!-- VIEW 2: FRAME MANAGEMENT VIEW -->
